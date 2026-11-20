@@ -1,0 +1,60 @@
+
+import cv2
+import pytesseract
+import re
+
+# Open camera
+cap = cv2.VideoCapture(0)
+
+print("License Plate Recognition Started")
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        print("Camera not detected")
+        break
+
+    # Convert image to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Apply threshold
+    gray = cv2.threshold(
+        gray, 150, 255, cv2.THRESH_BINARY
+    )[1]
+
+    # Read text using OCR
+    text = pytesseract.image_to_string(
+        gray, config="--psm 11"
+    )
+
+    # Check Indian vehicle number format
+    numbers = re.findall(
+        r'[A-Z]{2}\s*\d{1,2}\s*[A-Z]{0,3}\s*\d{1,4}',
+        text.upper()
+    )
+
+    for number in numbers:
+        plate = re.sub(r'\s+', '', number)
+
+        print("License Plate:", plate)
+
+        cv2.putText(
+            frame,
+            plate,
+            (50, 50),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2
+        )
+
+    # Display camera output
+    cv2.imshow("License Plate Recognition", frame)
+
+    # Press Q to exit
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
